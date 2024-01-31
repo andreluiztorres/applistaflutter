@@ -1,6 +1,6 @@
 # Applistaflutter
 
-Este é um projeto Flutter incrível para criar e gerenciar listas. 
+Este é um projeto Flutter teste para criar e gerenciar listas. 
 
 ## Pré-requisitos
 
