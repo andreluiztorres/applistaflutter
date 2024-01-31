@@ -22,11 +22,12 @@ class FirestoreService {
   Future<void> adicionarTarefa(Tarefa tarefa) async {
     try {
       await _tarefasCollection.add({
+        'id': tarefa.id,
         'descricao': tarefa.descricao,
         'dataCriacao': tarefa.dataCriacao,
       });
     } catch (e) {
-      print("Erro ao adicionar tarefa: $e");
+      log("Erro ao adicionar tarefa: $e");
     }
   }
 
@@ -37,13 +38,21 @@ class FirestoreService {
         'dataCriacao': tarefa.dataCriacao,
       });
     } catch (e) {
-      print("Erro ao editar tarefa: $e");
+      log("Erro ao editar tarefa: $e");
     }
   }
 
   Future<void> excluirTarefa(String id) async {
     try {
-      await _tarefasCollection.doc(id).delete();
+      QuerySnapshot querySnapshot =
+          await _tarefasCollection.where("id", isEqualTo: id).get();
+      String idDoDocumentoParaExcluir = querySnapshot.docs.first.id;
+      await _tarefasCollection
+          .doc(idDoDocumentoParaExcluir)
+          .delete()
+          .then((value) {
+        log("Tarefa $idDoDocumentoParaExcluir excluída com sucesso!");
+      });
     } catch (e) {
       log("Erro ao excluir tarefa: $e");
     }

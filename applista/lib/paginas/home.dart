@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, library_private_types_in_public_api, use_key_in_widget_constructors
 
 import 'dart:developer';
 
@@ -21,18 +21,54 @@ class _HomeState extends State<Home> {
     tarefasBloc.getTarefas();
   }
 
+  Future<void> _cadastrarTarefa(String descricao) async {
+    if (descricao.isNotEmpty) {
+      String novaTarefaId = const Uuid().v4();
+      log("Nova tarefa ID: $novaTarefaId");
+      Tarefa novaTarefa = Tarefa(
+        id: novaTarefaId,
+        descricao: descricao,
+        dataCriacao: DateTime.now(),
+      );
+
+      await FirestoreService().adicionarTarefa(novaTarefa);
+
+      Navigator.pop(context);
+    } else {
+      log("Por favor, preencha todos os campos.");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lista de Tarefas'),
+        title: const Text(
+          'Lista de Tarefas',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: StreamBuilder<List<Tarefa>>(
         stream: tarefasBloc.tarefasStream,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final tarefas = snapshot.data!;
-            return TarefasList(tarefas: tarefas);
+            return TarefasList(
+              tarefas: tarefas,
+              onDismissed: (String tarefaId) async {
+                await FirestoreService().excluirTarefa(tarefaId);
+                tarefasBloc.getTarefas();
+              },
+            );
           } else {
             return const Center(
               child: CircularProgressIndicator(),
@@ -42,87 +78,58 @@ class _HomeState extends State<Home> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          __showAdicionarTarefaBottomSheet(context);
+          _showAdicionarTarefaBottomSheet(context);
         },
+        elevation: 5.0,
+        backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  __showAdicionarTarefaBottomSheet(BuildContext context) {
-    TextEditingController tituloController = TextEditingController();
+  Future<void> _showAdicionarTarefaBottomSheet(BuildContext context) async {
     TextEditingController descricaoController = TextEditingController();
 
-    showModalBottomSheet(
+    double screenHeight = MediaQuery.of(context).size.height;
+
+    await showModalBottomSheet(
+      isScrollControlled: true,
       context: context,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Adicionar Tarefa',
-                style: TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10.0),
-              TextField(
-                controller: tituloController,
-                decoration: const InputDecoration(labelText: 'Título'),
-              ),
-              const SizedBox(height: 10.0),
-              TextField(
-                controller: descricaoController,
-                decoration: const InputDecoration(labelText: 'Descrição'),
-              ),
-              const SizedBox(height: 20.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            double bottomSheetHeight = screenHeight * 0.45;
+
+            return Container(
+              height: bottomSheetHeight,
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  ElevatedButton(
-                    onPressed: () async {
-                      // Adicionar lógica para cadastrar a tarefa
-                      String titulo = tituloController.text;
-                      String descricao = descricaoController.text;
-
-                      if (titulo.isNotEmpty && descricao.isNotEmpty) {
-                        // Crie uma nova instância de Tarefa
-                        String novaTarefaId = const Uuid().v4();
-                        Tarefa novaTarefa = Tarefa(
-                          id: novaTarefaId,
-                          descricao: descricao,
-                          dataCriacao: DateTime.now(),
-                        );
-
-                        // Adicione a nova tarefa ao Firestore
-                        await FirestoreService().adicionarTarefa(novaTarefa);
-
-                        // Fechar o popup
-                        Navigator.pop(context);
-                      } else {
-                        // Tratar caso campos estejam vazios
-                        log("Por favor, preencha todos os campos.");
-                      }
-                    },
-                    child: const Text('Cadastrar'),
+                  const Text(
+                    'Adicionar Tarefa',
+                    style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const SizedBox(width: 10.0),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Fechar o popup
+                  TextField(
+                    controller: descricaoController,
+                    decoration: const InputDecoration(labelText: 'Descrição'),
+                    onSubmitted: (_) {
+                      _cadastrarTarefa(descricaoController.text);
                     },
-                    child: const Text('Cancelar'),
                   ),
+                  const SizedBox(height: 20.0),
                 ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
-    );
+    ).then((_) {
+      tarefasBloc.getTarefas();
+    });
   }
 }

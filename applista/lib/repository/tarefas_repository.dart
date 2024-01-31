@@ -7,6 +7,4 @@ class TarefasRepository {
   Future<List<Tarefa>> getTarefas() async {
     return await _firestoreService.getTarefas();
   }
-
-  // Implemente métodos para adicionar, editar e excluir tarefas
 }

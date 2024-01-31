@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// ignore_for_file: use_key_in_widget_constructors
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -11,11 +12,7 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // await FirebaseFirestore.instance.collection('tarefas').add({
-  //   'id': '2',
-  //   'descricao': 'Ir ao mercado',
-  //   'dataCriacao': DateTime.now(),
-  // });
+  //
   runApp(MyApp());
 }
 
@@ -35,7 +32,6 @@ class MyApp extends StatelessWidget {
         initialRoute: '/',
         routes: {
           '/': (context) => Home(),
-          // Adicione rotas para outras páginas conforme necessário
         },
       ),
     );
